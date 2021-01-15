@@ -30,6 +30,30 @@ jobs:
           name: linux-latest
           path: release
 
+  build-debian:
+    name: Build Debian Packages
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Go 1.16
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.16
+
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Build
+        run: |
+          make BUILD_NUMBER="${GITHUB_REF#refs/tags/v}" release-deb
+          mkdir release
+          mv build/*.deb release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v1
+        with:
+          name: debian-latest
+          path: release
+
   build-windows:
     name: Build Windows amd64
     runs-on: windows-latest
@@ -81,9 +105,14 @@ jobs:
 
   release:
     name: Create and Upload Release
-    needs: [build-linux, build-darwin, build-windows]
+    needs: [build-debian, build-linux, build-darwin, build-windows]
     runs-on: ubuntu-latest
     steps:
+      - name: Download Debian artifacts
+        uses: actions/download-artifact@v1
+        with:
+          name: debian-latest
+
       - name: Download Linux artifacts
         uses: actions/download-artifact@v1
         with:
@@ -106,7 +135,7 @@ jobs:
 
       - name: Create sha256sum
         run: |
-          for dir in linux-latest darwin-latest windows-latest
+          for dir in debian-latest linux-latest darwin-latest windows-latest
           do
             (
               cd $dir
@@ -116,6 +145,10 @@ jobs:
                 sha256sum <nebula-cert.exe | sed 's=-$=nebula-windows-amd64.zip/nebula-cert.exe='
                 sha256sum nebula-windows-amd64.zip
               else
+                  for v in *.deb
+                  do
+                    sha256sum $v
+                  done
                   for v in *.tar.gz
                   do
                     sha256sum $v
@@ -179,6 +212,26 @@ jobs:
           asset_path: ./windows-latest/nebula-windows-amd64.zip
           asset_name: nebula-windows-amd64.zip
           asset_content_type: application/zip
+
+      - name: Upload debian-amd64
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./debian-latest/nebula-linux-amd64.deb
+          asset_name: nebula-linux-amd64.deb
+          asset_content_type: application/gzip
+
+      - name: Upload debian-arm64
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./debian-latest/nebula-linux-arm64.deb
+          asset_name: nebula-linux-arm64.deb
+          asset_content_type: application/gzip
 
       - name: Upload linux-amd64
         uses: actions/upload-release-asset@v1.0.1

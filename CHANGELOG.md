@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added make target to build nebula*.deb
+
 ### Added
 
 - SSH `print-cert` has a new `-raw` flag to get the PEM representation of a certificate. (#483)
