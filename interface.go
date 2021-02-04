@@ -61,8 +61,8 @@ type Interface struct {
 	tunQueues          int
 
 	// rebindCount is used to decide if an active tunnel should trigger a punch notification through a lighthouse
-	rebindCount        int8
-	version            string
+	rebindCount int8
+	version     string
 
 	metricHandshakes metrics.Histogram
 	messageMetrics   *MessageMetrics
