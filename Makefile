@@ -33,6 +33,7 @@ endif
 LDFLAGS = -X main.Build=$(BUILD_NUMBER)
 
 ALL_DEBIAN = linux-amd64 \
+	linux-arm-7 \
 	linux-arm64
 ALL_LINUX = linux-amd64 \
 	linux-386 \
@@ -157,6 +158,12 @@ build/%/nebula-cert.exe: build/%/nebula-cert
 build/nebula-%.deb: build/%/nebula build/%/nebula-cert
 	cp -av dist/debian/ build/$*
 	sed -i "s/ARCHITECTURE/$(word 2, $(subst -, ,$*))/" build/$*/debian/DEBIAN/control
+	# fix package name
+	DPKG_PARAMS=
+	if [ "$*" = "linux-arm-7" ]; then \
+		DPKG_PARAMS=-Zxz \
+	    sed -i "s/arm$$/armhf/" build/$*/debian/DEBIAN/control; \
+	fi
 	sed -i "s/VERSION/$(BUILD_NUMBER)/" build/$*/debian/DEBIAN/control
 	mkdir -p build/$*/debian/usr/bin
 	cp -av build/$*/nebula build/$*/nebula-cert build/$*/debian/usr/bin
@@ -164,7 +171,7 @@ build/nebula-%.deb: build/%/nebula build/%/nebula-cert
 	cp -v dist/arch/nebula.service build/$*/debian/lib/systemd/system
 	mkdir -p build/$*/debian/etc/nebula
 	cp -v examples/config.yml build/$*/debian/etc/nebula
-	dpkg-deb --build --root-owner-group build/$*/debian build/nebula-$*.deb
+	dpkg-deb $(DPKG_PARAMS) --build --root-owner-group build/$*/debian build/nebula-$*.deb
 
 build/nebula-%.tar.gz: build/%/nebula build/%/nebula-cert
 	tar -zcv -C build/$* -f $@ nebula nebula-cert
