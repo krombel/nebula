@@ -29,6 +29,29 @@ jobs:
           name: linux-latest
           path: release
 
+  build-debian:
+    name: Build Debian Packages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+
+      - name: Build
+        run: |
+          make BUILD_NUMBER="${GITHUB_REF#refs/tags/v}" release-deb
+          mkdir release
+          mv build/*.deb release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: debian-latest
+          path: release
+
   build-windows:
     name: Build Windows
     runs-on: windows-latest
@@ -157,7 +180,7 @@ jobs:
 
   release:
     name: Create and Upload Release
-    needs: [build-linux, build-darwin, build-windows]
+    needs: [build-debian, build-linux, build-darwin, build-windows]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -178,7 +201,7 @@ jobs:
       - name: Create sha256sum
         run: |
           cd artifacts
-          for dir in linux-latest darwin-latest windows-latest
+          for dir in debian-latest linux-latest darwin-latest windows-latest
           do
             (
               cd $dir
@@ -196,6 +219,10 @@ jobs:
                 sha256sum <nebula | sed 's=-$=nebula-darwin.zip/nebula='
                 sha256sum <nebula-cert | sed 's=-$=nebula-darwin.zip/nebula-cert='
               else
+                for v in *.deb
+                do
+                  sha256sum $v
+                done
                 for v in *.tar.gz
                 do
                   sha256sum $v
@@ -215,4 +242,4 @@ jobs:
             --verify-tag \
             --title "Release ${{ github.ref_name }}" \
             "${{ github.ref_name }}" \
-            SHASUM256.txt *-latest/*.zip *-latest/*.tar.gz
+            SHASUM256.txt *-latest/*.zip *-latest/*.tar.gz *-latest/*.deb
