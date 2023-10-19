@@ -449,6 +449,12 @@ created.)
 
 - Fix a rare crash during handshake due to a race condition. (#535)
 
+## [1.4.0-2] - 2021-08-17
+
+### Added
+
+- Add Build target to build Debian packages. (#514)
+
 ## [1.4.0] - 2021-05-11
 
 ### Added
