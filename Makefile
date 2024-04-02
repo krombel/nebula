@@ -159,9 +159,7 @@ build/nebula-%.deb: build/%/nebula build/%/nebula-cert
 	cp -av dist/debian/ build/$*
 	sed -i "s/ARCHITECTURE/$(word 2, $(subst -, ,$*))/" build/$*/debian/DEBIAN/control
 	# fix package name
-	DPKG_PARAMS=
 	if [ "$*" = "linux-arm-7" ]; then \
-		DPKG_PARAMS=-Zxz \
 	    sed -i "s/arm$$/armhf/" build/$*/debian/DEBIAN/control; \
 	fi
 	sed -i "s/VERSION/$(BUILD_NUMBER)/" build/$*/debian/DEBIAN/control
@@ -169,7 +167,7 @@ build/nebula-%.deb: build/%/nebula build/%/nebula-cert
 	cp -av build/$*/nebula build/$*/nebula-cert build/$*/debian/usr/bin
 	mkdir -p build/$*/debian/etc/nebula
 	cp -v examples/config.yml build/$*/debian/etc/nebula
-	dpkg-deb $(DPKG_PARAMS) --build --root-owner-group build/$*/debian build/nebula-$*.deb
+	dpkg-deb -Zxz --build --root-owner-group build/$*/debian build/nebula-$*.deb
 
 build/nebula-%.tar.gz: build/%/nebula build/%/nebula-cert
 	tar -zcv -C build/$* -f $@ nebula nebula-cert
